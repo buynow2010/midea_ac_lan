@@ -15,6 +15,11 @@ CONF_ACCOUNT = "account"
 CONF_SERVER = "server"
 CONF_REFRESH_INTERVAL = "refresh_interval"
 
+# AC specific options
+CONF_EXTERNAL_TEMPERATURE_SENSOR = "external_temperature_sensor"
+CONF_EXTERNAL_HUMIDITY_SENSOR = "external_humidity_sensor"
+CONF_DISABLE_SWING = "disable_swing"
+
 EXTRA_SENSOR = [Platform.SENSOR, Platform.BINARY_SENSOR]
 EXTRA_SWITCH = [Platform.SWITCH, Platform.LOCK, Platform.SELECT, Platform.NUMBER]
 EXTRA_CONTROL = [

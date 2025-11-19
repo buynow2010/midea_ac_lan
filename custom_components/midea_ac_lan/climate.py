@@ -36,8 +36,9 @@ from homeassistant.const import (
     Platform,
     UnitOfTemperature,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_state_change_event
 from midealocal.device import DeviceType
 from midealocal.devices.ac import DeviceAttributes as ACAttributes
 from midealocal.devices.ac import MideaACDevice
@@ -50,7 +51,14 @@ from midealocal.devices.cf import MideaCFDevice
 from midealocal.devices.fb import DeviceAttributes as FBAttributes
 from midealocal.devices.fb import MideaFBDevice
 
-from .const import DEVICES, DOMAIN, FanSpeed
+from .const import (
+    CONF_DISABLE_SWING,
+    CONF_EXTERNAL_HUMIDITY_SENSOR,
+    CONF_EXTERNAL_TEMPERATURE_SENSOR,
+    DEVICES,
+    DOMAIN,
+    FanSpeed,
+)
 from .midea_devices import MIDEA_DEVICES
 from .midea_entity import MideaEntity
 
@@ -266,6 +274,7 @@ class MideaACClimate(MideaClimate):
     ) -> None:
         """Midea AC Climate entity init."""
         super().__init__(device, entity_key)
+        self._config_entry = config_entry
         self._attr_hvac_modes = [
             HVACMode.OFF,
             HVACMode.AUTO,
@@ -282,12 +291,15 @@ class MideaACClimate(MideaClimate):
             FAN_FULL_SPEED: 100,
             FAN_AUTO: 102,
         }
-        self._attr_swing_modes: list[str] = [
-            SWING_OFF,
-            SWING_VERTICAL,
-            SWING_HORIZONTAL,
-            SWING_BOTH,
-        ]
+        # Check if swing mode should be disabled
+        self._disable_swing = config_entry.options.get(CONF_DISABLE_SWING, False)
+        if not self._disable_swing:
+            self._attr_swing_modes = [
+                SWING_OFF,
+                SWING_VERTICAL,
+                SWING_HORIZONTAL,
+                SWING_BOTH,
+            ]
         self._attr_preset_modes = [
             PRESET_NONE,
             PRESET_COMFORT,
@@ -303,6 +315,135 @@ class MideaACClimate(MideaClimate):
             "sensors" in config_entry.options
             and "indoor_humidity" in config_entry.options["sensors"]
         )
+        # External sensor configuration
+        self._external_temp_sensor = config_entry.options.get(
+            CONF_EXTERNAL_TEMPERATURE_SENSOR,
+            "",
+        )
+        self._external_humidity_sensor = config_entry.options.get(
+            CONF_EXTERNAL_HUMIDITY_SENSOR,
+            "",
+        )
+        self._external_temp_value: float | None = None
+        self._external_humidity_value: float | None = None
+
+    @property
+    def supported_features(self) -> ClimateEntityFeature:
+        """Midea AC Climate supported features."""
+        features = (
+            ClimateEntityFeature.TARGET_TEMPERATURE
+            | ClimateEntityFeature.FAN_MODE
+            | ClimateEntityFeature.PRESET_MODE
+        )
+        # Only add swing mode if not disabled
+        if not self._disable_swing:
+            features |= ClimateEntityFeature.SWING_MODE
+        if (MAJOR_VERSION, MINOR_VERSION) >= (2024, 2):
+            features |= ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
+        return features
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity about to be added to hass."""
+        await super().async_added_to_hass()
+        
+        # Setup external sensor listeners
+        if self._external_temp_sensor:
+            async_track_state_change_event(
+                self.hass,
+                [self._external_temp_sensor],
+                self._async_external_temp_sensor_changed,
+            )
+            # Get initial state
+            if (
+                temp_state := self.hass.states.get(self._external_temp_sensor)
+            ) and temp_state.state not in ("unavailable", "unknown", None):
+                try:
+                    self._external_temp_value = float(temp_state.state)
+                except (ValueError, TypeError):
+                    _LOGGER.warning(
+                        "Unable to parse external temperature sensor value: %s",
+                        temp_state.state,
+                    )
+
+        if self._external_humidity_sensor:
+            async_track_state_change_event(
+                self.hass,
+                [self._external_humidity_sensor],
+                self._async_external_humidity_sensor_changed,
+            )
+            # Get initial state
+            if (
+                humidity_state := self.hass.states.get(self._external_humidity_sensor)
+            ) and humidity_state.state not in ("unavailable", "unknown", None):
+                try:
+                    self._external_humidity_value = float(humidity_state.state)
+                except (ValueError, TypeError):
+                    _LOGGER.warning(
+                        "Unable to parse external humidity sensor value: %s",
+                        humidity_state.state,
+                    )
+
+    @callback
+    def _async_external_temp_sensor_changed(self, event: Any) -> None:  # noqa: ANN401
+        """Handle external temperature sensor state changes."""
+        new_state = event.data.get("new_state")
+        if new_state is None or new_state.state in ("unavailable", "unknown", None):
+            self._external_temp_value = None
+            return
+
+        try:
+            self._external_temp_value = float(new_state.state)
+            self.schedule_update_ha_state()
+        except (ValueError, TypeError):
+            _LOGGER.warning(
+                "Unable to parse external temperature sensor value: %s",
+                new_state.state,
+            )
+            self._external_temp_value = None
+
+    @callback
+    def _async_external_humidity_sensor_changed(self, event: Any) -> None:  # noqa: ANN401
+        """Handle external humidity sensor state changes."""
+        new_state = event.data.get("new_state")
+        if new_state is None or new_state.state in ("unavailable", "unknown", None):
+            self._external_humidity_value = None
+            return
+
+        try:
+            self._external_humidity_value = float(new_state.state)
+            self.schedule_update_ha_state()
+        except (ValueError, TypeError):
+            _LOGGER.warning(
+                "Unable to parse external humidity sensor value: %s",
+                new_state.state,
+            )
+            self._external_humidity_value = None
+
+    @property
+    def current_temperature(self) -> float | None:
+        """Return the current temperature, preferring external sensor."""
+        # Use external temperature sensor if configured and available
+        if self._external_temp_sensor and self._external_temp_value is not None:
+            return self._external_temp_value
+        # Fallback to AC's built-in sensor
+        return cast("float | None", self._device.get_attribute("indoor_temperature"))
+
+    @property
+    def current_humidity(self) -> float | None:
+        """Return the current humidity, preferring external sensor."""
+        # Use external humidity sensor if configured and available
+        if (
+            self._external_humidity_sensor
+            and self._external_humidity_value is not None
+        ):
+            return self._external_humidity_value
+        # Fallback to AC's built-in humidity sensor
+        if not self._indoor_humidity_enabled:
+            return None
+        raw = self._device.get_attribute("indoor_humidity")
+        if isinstance(raw, (int, float)) and raw not in {0, 0xFF}:
+            return float(raw)
+        return None
 
     @property
     def fan_mode(self) -> str:

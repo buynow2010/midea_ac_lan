@@ -7,12 +7,22 @@
       "device_exist": "Appliance is already configured",
       "config_incorrect": "The configuration is incorrect",
       "connect_error": "Can't connect to appliance",
-      "invalid_token": "Token or Key in an incorrect format"
+      "invalid_token": "Token or Key in an incorrect format",
+      "invalid_device_ip": "Invalid device IP address, no device or multiple devices discovered",
+      "token_from_server_failed": "Can't get valid token from Midea server",
+      "preset_login_failed": "Preset account login failed",
+      "device_id_mismatch": "Device ID mismatch",
+      "ip_address_mismatch": "IP address mismatch",
+      "protocol_mismatch": "Protocol version mismatch",
+      "device_auth_failed": "Device authentication failed, please check configuration"
     },
     "step": {
       "user": {
         "data": {
-          "way": "Adding appliances"
+          "action": "Adding appliances"
+        },
+        "data_description": {
+          "action": "Choose how to add devices"
         },
         "description": "Choose the way to add a appliance",
         "title": "Add new appliance"
@@ -58,6 +68,13 @@
         },
         "description": "Configuration of appliance",
         "title": "New appliance"
+      },
+      "cache": {
+        "data": {
+          "action": "Action"
+        },
+        "description": "Confirm to remove saved login information? You will need to login again to add new devices.",
+        "title": "Remove login cache"
       }
     }
   },
@@ -471,7 +488,26 @@
         "name": "Outdoor Temperature"
       },
       "program": {
-        "name": "Program"
+        "name": "Program",
+        "state": {
+          "mixed_wash": "Mixed Wash",
+          "silk_wash": "Silk Wash",
+          "standard_wash": "Standard Wash",
+          "quick_wash": "Quick Wash",
+          "heavy_wash": "Heavy Wash",
+          "delicate_wash": "Delicate Wash",
+          "wool_wash": "Wool Wash",
+          "jeans_wash": "Jeans Wash",
+          "sportswear_wash": "Sportswear Wash",
+          "baby_wash": "Baby Wash",
+          "rinse": "Rinse",
+          "spin": "Spin",
+          "dry": "Dry",
+          "air_dry": "Air Dry",
+          "refresh": "Refresh",
+          "sterilize": "Sterilize",
+          "self_clean": "Self Clean"
+        }
       },
       "progress": {
         "name": "Progress"
@@ -510,7 +546,24 @@
         "name": "Softwater Level"
       },
       "status": {
-        "name": "Status"
+        "name": "Status",
+        "state": {
+          "idle": "Idle",
+          "running": "Running",
+          "paused": "Paused",
+          "completed": "Completed",
+          "error": "Error",
+          "off": "Off",
+          "on": "On",
+          "washing": "Washing",
+          "rinsing": "Rinsing",
+          "spinning": "Spinning",
+          "drying": "Drying",
+          "prewash": "Prewash",
+          "soaking": "Soaking",
+          "heating": "Heating",
+          "cooling": "Cooling"
+        }
       },
       "storage_remaining": {
         "name": "Storage Remaining"
@@ -745,7 +798,20 @@
           "refresh_interval": "Refresh interval (0 means not refreshing actively)",
           "sensors": "Extra sensors",
           "switches": "Extra controls",
-          "customize": "Customize"
+          "customize": "Customize",
+          "external_temperature_sensor": "External Temperature Sensor",
+          "external_humidity_sensor": "External Humidity Sensor",
+          "disable_swing": "Disable Swing Mode"
+        },
+        "data_description": {
+          "ip_address": "Device IP address",
+          "refresh_interval": "Device status refresh interval, set to 0 to disable active refresh",
+          "sensors": "Select extended sensor entities to enable",
+          "switches": "Select extended control entities to enable",
+          "customize": "Advanced users can enter JSON format custom configuration",
+          "external_temperature_sensor": "Select a temperature sensor to replace AC's built-in sensor, leave blank to use default",
+          "external_humidity_sensor": "Select a humidity sensor to replace AC's built-in sensor, leave blank to use default",
+          "disable_swing": "Check to completely remove swing control, swing option will not be displayed in the interface"
         },
         "title": "Configure"
       }

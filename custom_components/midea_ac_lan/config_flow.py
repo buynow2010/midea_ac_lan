@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+from homeassistant.helpers import selector
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import (
     CONF_CUSTOMIZE,
@@ -69,6 +70,9 @@ else:
 
 from .const import (
     CONF_ACCOUNT,
+    CONF_DISABLE_SWING,
+    CONF_EXTERNAL_HUMIDITY_SENSOR,
+    CONF_EXTERNAL_TEMPERATURE_SENSOR,
     CONF_KEY,
     CONF_MODEL,
     CONF_REFRESH_INTERVAL,
@@ -83,10 +87,10 @@ from .midea_devices import MIDEA_DEVICES
 _LOGGER = logging.getLogger(__name__)
 
 ADD_WAY = {
-    "discovery": "Discover automatically",
-    "manually": "Configure manually",
-    "list": "List all appliances only",
-    "cache": "Remove login cache",
+    "discovery": "自动发现设备",
+    "manually": "手动配置设备",
+    "list": "仅列出所有设备",
+    "cache": "移除登录缓存",
 }
 
 # Select DEFAULT_CLOUD from the list of supported cloud
@@ -94,7 +98,7 @@ DEFAULT_CLOUD: str = list(SUPPORTED_CLOUDS)[3]
 
 STORAGE_PATH = f".storage/{DOMAIN}"
 
-SKIP_LOGIN = "Skip Login (input any user/password)"
+SKIP_LOGIN = "跳过登录（输入任意用户名/密码）"
 
 
 class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
@@ -356,10 +360,10 @@ class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
         # available devices exist
         if len(all_devices) > 0:
             table = (
-                "Appliance code|Type|IP address|SN|Supported\n:--:|:--:|:--:|:--:|:--:"
+                "设备编号|类型|IP地址|序列号|是否支持\n:--:|:--:|:--:|:--:|:--:"
             )
-            green = "<font color=gree>YES</font>"
-            red = "<font color=red>NO</font>"
+            green = "<font color=green>是</font>"
+            red = "<font color=red>否</font>"
             for device_id, device in all_devices.items():
                 supported = device.get(CONF_TYPE) in self.supports
                 table += (
@@ -370,7 +374,7 @@ class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                 )
         # no available device
         else:
-            table = "Not found"
+            table = "未发现设备"
         # show devices list result in UI
         return self.async_show_form(
             step_id="list",
@@ -623,13 +627,13 @@ class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                     # exclude: user selected not login and phase 1 is preset account
                     if self.hass.data[DOMAIN]["login_mode"] == "preset":
                         return await self.async_step_auto(
-                            error="can't get valid token from Midea server",
+                            error="token_from_server_failed",
                         )
 
                     # get key phase 2: reinit cloud with preset account
                     if not await self._check_cloud_login(force_login=True):
                         return await self.async_step_auto(
-                            error="Perset account login failed!",
+                            error="preset_login_failed",
                         )
                     # try to get a passed key, without default_key
                     keys = await self._check_key_from_cloud(
@@ -644,10 +648,7 @@ class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                             device_id,
                         )
                         return await self.async_step_auto(
-                            error=(
-                                f"Can't get available token from Midea server"
-                                f" for device {device_id}"
-                            ),
+                            error="token_from_server_failed",
                         )
                 # get key pass
                 self.found_device[CONF_TOKEN] = keys["token"]
@@ -706,17 +707,17 @@ class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                 # check if device_id is correctly set for that IP
                 if user_input[CONF_DEVICE_ID] != device_id:
                     return await self.async_step_manually(
-                        error=f"For ip {ip} the device_id MUST be {device_id}",
+                        error="device_id_mismatch",
                     )
 
             device = self.devices[device_id]
             if user_input[CONF_IP_ADDRESS] != device.get(CONF_IP_ADDRESS):
                 return await self.async_step_manually(
-                    error=f"ip_address MUST be {device.get(CONF_IP_ADDRESS)}",
+                    error="ip_address_mismatch",
                 )
             if user_input[CONF_PROTOCOL] != device.get(CONF_PROTOCOL):
                 return await self.async_step_manually(
-                    error=f"protocol MUST be {device.get(CONF_PROTOCOL)}",
+                    error="protocol_mismatch",
                 )
 
             # try to get token/key with preset account
@@ -727,7 +728,7 @@ class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                 result = await self._check_cloud_login()
                 if not result:
                     return await self.async_step_manually(
-                        error="Perset account login failed!",
+                        error="preset_login_failed",
                     )
                 # try to get a passed key
                 keys = await self._check_key_from_cloud(int(user_input[CONF_DEVICE_ID]))
@@ -739,10 +740,7 @@ class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                         user_input[CONF_DEVICE_ID],
                     )
                     return await self.async_step_manually(
-                        error=(
-                            f"Can't get a valid token from Midea server"
-                            f" for device {user_input[CONF_DEVICE_ID]}"
-                        ),
+                        error="token_from_server_failed",
                     )
 
                 # set token/key from preset account
@@ -807,7 +805,7 @@ class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                         data=data,
                     )
             return await self.async_step_manually(
-                error="Device auth failed with input config",
+                error="device_auth_failed",
             )
         protocol = self.found_device.get(CONF_PROTOCOL)
         return self.async_show_form(
@@ -857,7 +855,7 @@ class MideaLanConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                         default=(
                             self.found_device.get(CONF_MODEL)
                             if self.found_device.get(CONF_MODEL)
-                            else "Unknown"
+                            else "未知"
                         ),
                     ): str,
                     vol.Required(
@@ -994,5 +992,49 @@ class MideaLanOptionsFlowHandler(OptionsFlow):
                 ): str,
             },
         )
+
+        # AC specific options - add separately for better UI grouping
+        if self._device_type == 0xAC:
+            external_temp_sensor = self._config_entry.options.get(
+                CONF_EXTERNAL_TEMPERATURE_SENSOR,
+                "",
+            )
+            external_humidity_sensor = self._config_entry.options.get(
+                CONF_EXTERNAL_HUMIDITY_SENSOR,
+                "",
+            )
+            disable_swing = self._config_entry.options.get(CONF_DISABLE_SWING, False)
+
+            # Use entity selector for better UX
+            data_schema = data_schema.extend(
+                {
+                    vol.Optional(
+                        CONF_EXTERNAL_TEMPERATURE_SENSOR,
+                        description={
+                            "suggested_value": external_temp_sensor,
+                        },
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain="sensor",
+                            device_class="temperature",
+                        ),
+                    ),
+                    vol.Optional(
+                        CONF_EXTERNAL_HUMIDITY_SENSOR,
+                        description={
+                            "suggested_value": external_humidity_sensor,
+                        },
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain="sensor",
+                            device_class="humidity",
+                        ),
+                    ),
+                    vol.Optional(
+                        CONF_DISABLE_SWING,
+                        default=disable_swing,
+                    ): selector.BooleanSelector(),
+                },
+            )
 
         return self.async_show_form(step_id="init", data_schema=data_schema)
