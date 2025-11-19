@@ -1,17 +1,6 @@
 {
   "name": "Midea AC LAN（完整汉化版）",
-  "render_readme": true,
-  "domains": [
-    "binary_sensor",
-    "climate",
-    "fan",
-    "humidifier",
-    "light",
-    "lock",
-    "number",
-    "select",
-    "sensor",
-    "switch",
-    "water_heater"
-  ]
+  "homeassistant": "2023.8",
+  "zip_release": true,
+  "filename": "midea_ac_lan.zip"
 }
