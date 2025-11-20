@@ -621,7 +621,26 @@
         }
       },
       "progress": {
-        "name": "当前程序"
+        "name": "当前程序",
+        "state": {
+          "Idle": "待机",
+          "Spin": "脱水",
+          "Rinse": "漂洗",
+          "Wash": "洗涤",
+          "Pre-wash": "预洗",
+          "Dry": "烘干",
+          "Weight": "称重",
+          "Hi-speed Spin": "高速脱水",
+          "Unknown": "未知",
+          "Prog0": "程序0",
+          "Prog1": "程序1",
+          "Prog2": "程序2",
+          "Prog3": "程序3",
+          "Prog4": "程序4",
+          "Prog5": "程序5",
+          "Prog6": "程序6",
+          "Prog7": "程序7"
+        }
       },
       "realtime_power": {
         "name": "实时功率"
