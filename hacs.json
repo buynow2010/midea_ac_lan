@@ -1,6 +1,6 @@
 {
-  "name": "Midea AC LAN（完整汉化版）",
-  "homeassistant": "2023.8",
+  "name": "Midea AC LAN（HomeKit 适配版）",
+  "homeassistant": "2023.9",
   "zip_release": true,
   "filename": "midea_ac_lan.zip"
 }
