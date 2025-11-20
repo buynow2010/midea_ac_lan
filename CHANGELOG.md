@@ -6,6 +6,7 @@
 - **完整汉化滚筒洗衣机（DB）和干衣机（DC）的所有状态属性翻译**
   - program（程序）状态：从17个增加到**128个**完整翻译
   - status（状态）状态：从15个增加到**24个**完整翻译
+  - progress（当前程序）状态：新增**17个**完整翻译
   - 补充了temperature实体的名称翻译
 - 更新manifest.json中的文档和问题跟踪链接，指向当前仓库
 - 移除了冗余的requirements.txt文件（依赖已在manifest.json中定义）
@@ -31,6 +32,11 @@
 - 预处理：预洗中(prewash)、浸泡中(soaking)、加热中(heating)、冷却中(cooling)
 - 特殊状态：防皱结束(prevent_wrinkle_end)、延时(delay)、延时选择(delay_choosing)、延时暂停(delay_pause)
 - 错误状态：错误(error)、故障(fault)、关闭(off)、开启(on)
+
+**progress状态翻译（17个）**
+包含所有当前程序状态：
+- **DB设备**：待机(Idle)、洗涤(Wash)、漂洗(Rinse)、脱水(Spin)、预洗(Pre-wash)、烘干(Dry)、称重(Weight)、高速脱水(Hi-speed Spin)、未知(Unknown)
+- **DC设备**：程序0-7(Prog0-Prog7)、未知(Unknown)
 
 **实体名称翻译**
 滚筒洗衣机（DB）和干衣机（DC）的所有实体：
