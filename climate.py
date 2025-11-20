@@ -275,13 +275,12 @@ class MideaACClimate(MideaClimate):
         """Midea AC Climate entity init."""
         super().__init__(device, entity_key)
         self._config_entry = config_entry
+        # Only expose HomeKit-compatible modes for better compatibility
         self._attr_hvac_modes = [
             HVACMode.OFF,
             HVACMode.AUTO,
             HVACMode.COOL,
-            HVACMode.DRY,
             HVACMode.HEAT,
-            HVACMode.FAN_ONLY,
         ]
         self._fan_speeds: dict[str, int] = {
             FAN_SILENT: 20,
@@ -522,13 +521,12 @@ class MideaCCClimate(MideaClimate):
     def __init__(self, device: MideaCCDevice, entity_key: str) -> None:
         """Midea CC Climate entity init."""
         super().__init__(device, entity_key)
+        # Only expose HomeKit-compatible modes
         self._attr_hvac_modes = [
             HVACMode.OFF,
-            HVACMode.FAN_ONLY,
-            HVACMode.DRY,
-            HVACMode.HEAT,
-            HVACMode.COOL,
             HVACMode.AUTO,
+            HVACMode.COOL,
+            HVACMode.HEAT,
         ]
         self._attr_swing_modes = [SWING_OFF, SWING_ON]
         self._attr_preset_modes = [PRESET_NONE, PRESET_SLEEP, PRESET_ECO]
