@@ -479,7 +479,13 @@
         "name": "中层温度"
       },
       "mode": {
-        "name": "模式"
+        "name": "模式",
+        "state": {
+          "normal": "正常",
+          "factory_test": "工厂测试",
+          "service": "服务",
+          "normal_continus": "持续正常"
+        }
       },
       "out_tds": {
         "name": "出水TDS"
@@ -759,7 +765,14 @@
         "name": "总耗水量"
       },
       "water_level": {
-        "name": "水位"
+        "name": "水位",
+        "state": {
+          "Low": "低",
+          "Mid": "中",
+          "High": "高",
+          "Auto": "自动",
+          "default": "默认"
+        }
       },
       "water_temperature": {
         "name": "水温"
