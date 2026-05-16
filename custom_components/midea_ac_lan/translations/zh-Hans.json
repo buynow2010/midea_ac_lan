@@ -155,6 +155,21 @@
       "middle_compartment_preheating": {
         "name": "中层预热"
       },
+      "top_elec_heat": {
+        "name": "上电加热"
+      },
+      "bottom_elec_heat": {
+        "name": "下电加热"
+      },
+      "mute_effect": {
+        "name": "静音效果"
+      },
+      "mute_status": {
+        "name": "静音状态"
+      },
+      "multi_terminal": {
+        "name": "多终端"
+      },
       "oilcup_full": {
         "name": "油杯满提示"
       },
@@ -175,6 +190,9 @@
       },
       "seat_status": {
         "name": "入座状态"
+      },
+      "smart_grid": {
+        "name": "智能电网"
       },
       "status_dhw": {
         "name": "DHW状态"
@@ -773,6 +791,27 @@
           "Auto": "自动",
           "default": "默认"
         }
+      },
+      "wind": {
+        "name": "风速"
+      },
+      "typeinfo": {
+        "name": "类型信息"
+      },
+      "elec_heat": {
+        "name": "电加热"
+      },
+      "water_pump": {
+        "name": "水泵"
+      },
+      "four_way": {
+        "name": "四通阀"
+      },
+      "back_water": {
+        "name": "回水"
+      },
+      "sterilize": {
+        "name": "杀菌"
       },
       "water_temperature": {
         "name": "水温"
